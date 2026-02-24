@@ -1,0 +1,64 @@
+<html>
+<body>
+<pre>
+<h1>µVision Build Log</h1>
+<h2>Tool Versions:</h2>
+IDE-Version: ¦ÌVision V5.38.0.0
+Copyright (C) 2022 ARM Ltd and ARM Germany GmbH. All rights reserved.
+License Information: 1 2193361360@qq.com, 1, LIC=----
+ 
+Tool Versions:
+Toolchain:       MDK51 Professional  Version: 9.60.7.0
+Toolchain Path:  D:\Keil_v5\C51\BIN
+C Compiler:      C51.exe V9.60.7.0
+Assembler:       A51.exe V8.2.7.0
+Linker/Locator:  BL51.exe V6.22.4.0
+Library Manager: LIB51.exe V4.30.1.0
+Hex Converter:   OH51.exe V2.7.0.0
+CPU DLL:         S8051.DLL V3.125.1.0
+Dialog DLL:      DP51.DLL V2.69.0.0 
+<h2>Project:</h2>
+E:\21933\Documents\Keil C51\RainWiper\RainWiper.uvproj
+Project File Date:  02/24/2026
+
+<h2>Output:</h2>
+Build target 'Target 1'
+assembling STARTUP.A51...
+compiling ADC0832.c...
+ADC0832.c(19): warning C318: can't open file 'ADC0832.h'
+ADC0832.c(41): error C202: 'ADC_CS': undefined identifier
+ADC0832.c(42): error C202: 'ADC_CLK': undefined identifier
+ADC0832.c(45): error C202: 'ADC_DI': undefined identifier
+compiling main.c...
+main.c(66): warning C318: can't open file 'ADC0832.h'
+main.c(67): warning C318: can't open file 'oled.h'
+main.c(476): warning C206: 'OLED_Init': missing function-prototype
+main.c(477): warning C206: 'OLED_ShowBootScreen': missing function-prototype
+main.c(479): warning C206: 'OLED_Clear': missing function-prototype
+main.c(492): warning C206: 'ADC0832_Filter': missing function-prototype
+main.c(517): warning C206: 'OLED_RefreshAll': missing function-prototype
+main.c(517): error C267: 'OLED_RefreshAll': requires ANSI-style prototype
+compiling oled.c...
+oled.c(19): warning C318: can't open file 'oled.h'
+oled.c(131): warning C206: '_nop_': missing function-prototype
+oled.c(131): error C264: intrinsic '_nop_': declaration/activation error
+oled.c(137): error C202: 'OLED_SDA': undefined identifier
+oled.c(138): error C202: 'OLED_SCL': undefined identifier
+oled.c(139): error C202: 'OLED_SDA': undefined identifier
+oled.c(140): error C202: 'OLED_SCL': undefined identifier
+oled.c(145): error C202: 'OLED_SDA': undefined identifier
+oled.c(146): error C202: 'OLED_SCL': undefined identifier
+oled.c(147): error C202: 'OLED_SDA': undefined identifier
+oled.c(155): error C202: 'OLED_SDA': undefined identifier
+oled.c(158): error C202: 'OLED_SCL': undefined identifier
+oled.c(159): error C202: 'OLED_SCL': undefined identifier
+oled.c(162): error C202: 'OLED_SDA': undefined identifier
+oled.c(164): error C202: 'OLED_SCL': undefined identifier
+oled.c(165): error C202: 'OLED_SCL': undefined identifier
+oled.c(174): error C202: 'OLED_ADDR': undefined identifier
+oled.c(186): error C202: 'OLED_ADDR': undefined identifier
+Target not created.
+Build Time Elapsed:  00:00:01
+</pre>
+</body>
+</html>

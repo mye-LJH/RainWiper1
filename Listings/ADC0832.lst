@@ -1,0 +1,141 @@
+C51 COMPILER V9.60.7.0   ADC0832                                                           02/24/2026 23:35:53 PAGE 1   
+
+
+C51 COMPILER V9.60.7.0, COMPILATION OF MODULE ADC0832
+OBJECT MODULE PLACED IN .\Objects\ADC0832.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE ADC0832.c OPTIMIZE(8,SPEED) BROWSE DEBUG OBJECTEXTEND PRINT(.\Listings\A
+                    -DC0832.lst) TABS(2) OBJECT(.\Objects\ADC0832.obj)
+
+line level    source
+
+   1          /*============================================================
+   2           * ADC0832.c  --  ADC0832 串行8位A/D转换器驱动实现
+   3           *
+   4           * 项目：基于STC89C52单片机的智能汽车雨刮器模拟系统
+   5           * 作者：梁嘉惠  学号：3222004950
+   6           * 学校：五邑大学 电子与信息工程学院  班级：220710
+   7           * 指导教师：龙佳乐 副教授
+   8           * 编译器：Keil C51  主频：11.0592MHz
+   9           *============================================================
+  10           * ADC0832通信时序说明（软件SPI）：
+  11           *   1. CS拉低，开始通信
+  12           *   2. 发送起始位(1) + SGL位(1，单端模式) + MUX位(0，选CH0)
+  13           *      共3个控制位，在CLK上升沿采样
+  14           *   3. 等待一个CLK后，从DO读取8位转换结果（MSB先出）
+  15           *   4. CS拉高，结束通信
+  16           * 转换结果：干燥时约255，完全浸水时约0
+  17           *============================================================*/
+  18          
+  19          #include "ADC0832.h"
+*** WARNING C318 IN LINE 19 OF ADC0832.c: can't open file 'ADC0832.h'
+  20          
+  21          /* ===== 滤波缓冲区（全局，供滤波函数使用） ===== */
+  22          #define FILTER_N  8
+  23          static unsigned char s_flt_buf[FILTER_N];
+  24          static unsigned char s_flt_idx = 0;
+  25          static unsigned char s_flt_init = 0;   /* 首次初始化标志 */
+  26          
+  27          /*------------------------------------------------------------
+  28           * ADC0832_Read_CH0()
+  29           * 功能：读取ADC0832的CH0通道（单端输入）
+  30           * 返回：8位转换结果（0~255）
+  31           *       0   → 电压最低（约0V），对应大雨（传感器电阻最小）
+  32           *       255 → 电压最高（约5V），对应无雨（传感器电阻最大）
+  33           * 说明：完全依照ADC0832数据手册时序实现
+  34           *------------------------------------------------------------*/
+  35          unsigned char ADC0832_Read_CH0(void)
+  36          {
+  37   1          unsigned char i;
+  38   1          unsigned char dat = 0;
+  39   1      
+  40   1          /* ① CS拉低，开始一次转换 */
+  41   1          ADC_CS  = 0;
+*** ERROR C202 IN LINE 41 OF ADC0832.c: 'ADC_CS': undefined identifier
+  42   1          ADC_CLK = 0;
+*** ERROR C202 IN LINE 42 OF ADC0832.c: 'ADC_CLK': undefined identifier
+  43   1      
+  44   1          /* ② 发送起始位 = 1 */
+  45   1          ADC_DI = 1;
+*** ERROR C202 IN LINE 45 OF ADC0832.c: 'ADC_DI': undefined identifier
+  46   1          _nop_(); _nop_();
+  47   1          ADC_CLK = 1;
+  48   1          _nop_(); _nop_();
+  49   1          ADC_CLK = 0;
+  50   1      
+C51 COMPILER V9.60.7.0   ADC0832                                                           02/24/2026 23:35:53 PAGE 2   
+
+  51   1          /* ③ 发送SGL = 1（单端模式，对应MUX选CH0/CH1） */
+  52   1          ADC_DI = 1;
+  53   1          _nop_(); _nop_();
+  54   1          ADC_CLK = 1;
+  55   1          _nop_(); _nop_();
+  56   1          ADC_CLK = 0;
+  57   1      
+  58   1          /* ④ 发送ODD/SIGN = 0（选CH0为正，CH1为负，即读CH0） */
+  59   1          ADC_DI = 0;
+  60   1          _nop_(); _nop_();
+  61   1          ADC_CLK = 1;
+  62   1          _nop_(); _nop_();
+  63   1          ADC_CLK = 0;
+  64   1      
+  65   1          /* ⑤ 释放DI，等待DO输出，此CLK为空CLK（转换完成后才输出） */
+  66   1          ADC_DI = 1;
+  67   1          _nop_(); _nop_();
+  68   1      
+  69   1          /* ⑥ 读取8位结果（MSB先出） */
+  70   1          for (i = 0; i < 8; i++)
+  71   1          {
+  72   2              dat <<= 1;                  /* 先移位，再读位 */
+  73   2              ADC_CLK = 1;
+  74   2              _nop_(); _nop_();
+  75   2              if (ADC_DO)
+  76   2                  dat |= 0x01;            /* 在时钟高期间读DO */
+  77   2              ADC_CLK = 0;
+  78   2              _nop_(); _nop_();
+  79   2          }
+  80   1      
+  81   1          /* ⑦ CS拉高，结束通信 */
+  82   1          ADC_CS = 1;
+  83   1      
+  84   1          return dat;
+  85   1      }
+  86          
+  87          /*------------------------------------------------------------
+  88           * ADC0832_Filter()
+  89           * 功能：读取ADC0832并进行8点滑动平均滤波
+  90           * 返回：滤波后的ADC值（0~255）
+  91           * 说明：消除因电机PWM噪声和传感器抖动导致的数值跳变
+  92           *       首次调用时用第一次采样值填满缓冲区，避免冷启动偏差
+  93           *------------------------------------------------------------*/
+  94          unsigned char ADC0832_Filter(void)
+  95          {
+  96   1          unsigned char i;
+  97   1          unsigned char raw;
+  98   1          unsigned int  sum = 0;
+  99   1      
+ 100   1          raw = ADC0832_Read_CH0();
+ 101   1      
+ 102   1          /* 首次调用，用当前值填满整个缓冲区 */
+ 103   1          if (s_flt_init == 0)
+ 104   1          {
+ 105   2              s_flt_init = 1;
+ 106   2              for (i = 0; i < FILTER_N; i++)
+ 107   2                  s_flt_buf[i] = raw;
+ 108   2              s_flt_idx = 0;
+ 109   2              return raw;
+ 110   2          }
+ 111   1      
+ 112   1          /* 滑动写入 */
+C51 COMPILER V9.60.7.0   ADC0832                                                           02/24/2026 23:35:53 PAGE 3   
+
+ 113   1          s_flt_buf[s_flt_idx] = raw;
+ 114   1          s_flt_idx = (s_flt_idx + 1) % FILTER_N;
+ 115   1      
+ 116   1          /* 累加求均值 */
+ 117   1          for (i = 0; i < FILTER_N; i++)
+ 118   1              sum += s_flt_buf[i];
+ 119   1      
+ 120   1          return (unsigned char)(sum / FILTER_N);
+ 121   1      }
+
+C51 COMPILATION COMPLETE.  1 WARNING(S),  3 ERROR(S)

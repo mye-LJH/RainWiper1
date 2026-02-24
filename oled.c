@@ -1,31 +1,31 @@
 /*============================================================
- * oled.c  --  SSD1306 OLED I2C驱动完整实现（软件模拟I2C）
+ * oled.c  --  SSD1306 OLED I2C��������ʵ�֣�����ģ��I2C��
  *
- * 项目：基于STC89C52单片机的智能汽车雨刮器模拟系统
- * 作者：梁嘉惠  学号：3222004950
- * 学校：五邑大学 电子与信息工程学院  班级：220710
- * 指导教师：龙佳乐 副教授
- * 编译器：Keil C51  主频：11.0592MHz
+ * ��Ŀ������STC89C52��Ƭ�����������������ģ��ϵͳ
+ * ���ߣ����λ�  ѧ�ţ�3222004950
+ * ѧУ�����ش�ѧ ��������Ϣ����ѧԺ  �༶��220710
+ * ָ����ʦ�������� ������
+ * ��������Keil C51  ��Ƶ��11.0592MHz
  *============================================================
- * 实现说明：
- *  - 采用软件模拟I2C（P1.6=SCL, P1.7=SDA）
- *  - SSD1306工作在Page寻址模式（0x02命令设置）
- *  - 8×16 ASCII字库，支持空格(0x20)到波浪号(0x7E)全范围
- *  - OLED_ShowStr/ShowChar/ShowNum均基于Page模式定位
- *  - 注意：STC89C52 P1口为准双向口，SDA输出0时为强驱动低，
- *    SDA输出1时为弱上拉，I2C上拉电阻(4.7kΩ)保证信号质量
+ * ʵ��˵����
+ *  - ��������ģ��I2C��P1.6=SCL, P1.7=SDA��
+ *  - SSD1306������PageѰַģʽ��0x02�������ã�
+ *  - 8��16 ASCII�ֿ⣬֧�ֿո�(0x20)�����˺�(0x7E)ȫ��Χ
+ *  - OLED_ShowStr/ShowChar/ShowNum������Pageģʽ��λ
+ *  - ע�⣺STC89C52 P1��Ϊ׼˫��ڣ�SDA���0ʱΪǿ�����ͣ�
+ *    SDA���1ʱΪ��������I2C��������(4.7k��)��֤�ź�����
  *============================================================*/
 
 #include "oled.h"
 #include <string.h>
 
 /*============================================================
- * 8×16 ASCII点阵字库（0x20~0x7E，每字符16字节）
- * 格式：先上8行(Page0)，再下8行(Page1)，列从左到右
- * 字符宽度8像素，高度16像素（占用2个Page）
+ * 8��16 ASCII�����ֿ⣨0x20~0x7E��ÿ�ַ�16�ֽڣ�
+ * ��ʽ������8��(Page0)������8��(Page1)���д�����
+ * �ַ�����8���أ��߶�16���أ�ռ��2��Page��
  *============================================================*/
 code unsigned char F8X16[][16] = {
-/* 0x20 空格 ' ' */  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+/* 0x20 �ո� ' ' */  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
 /* 0x21 '!' */       {0x00,0x00,0x00,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x33,0x00,0x00,0x00,0x00},
 /* 0x22 '"' */       {0x00,0x10,0x0C,0x06,0x10,0x0C,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
 /* 0x23 '#' */       {0x40,0xC0,0x78,0x40,0xC0,0x78,0x40,0x00,0x04,0x3F,0x04,0x04,0x3F,0x04,0x04,0x00},
@@ -123,7 +123,7 @@ code unsigned char F8X16[][16] = {
 };
 
 /*============================================================
- *  软件I2C底层函数
+ *  ����I2C�ײ㺯��
  *============================================================*/
 
 static void i2c_delay(void)
@@ -136,7 +136,7 @@ static void i2c_start(void)
 {
     OLED_SDA = 1; i2c_delay();
     OLED_SCL = 1; i2c_delay();
-    OLED_SDA = 0; i2c_delay();     /* SDA下降沿（SCL高期间） = START */
+    OLED_SDA = 0; i2c_delay();     /* SDA�½��أ�SCL���ڼ䣩 = START */
     OLED_SCL = 0; i2c_delay();
 }
 
@@ -144,7 +144,7 @@ static void i2c_stop(void)
 {
     OLED_SDA = 0; i2c_delay();
     OLED_SCL = 1; i2c_delay();
-    OLED_SDA = 1; i2c_delay();     /* SDA上升沿（SCL高期间） = STOP  */
+    OLED_SDA = 1; i2c_delay();     /* SDA�����أ�SCL���ڼ䣩 = STOP  */
 }
 
 static void i2c_write_byte(unsigned char dat)
@@ -158,7 +158,7 @@ static void i2c_write_byte(unsigned char dat)
         OLED_SCL = 1; i2c_delay();
         OLED_SCL = 0; i2c_delay();
     }
-    /* 接收ACK（此处忽略ACK，简化实现；实际使用中SSD1306总会发ACK） */
+    /* ����ACK���˴�����ACK����ʵ�֣�ʵ��ʹ����SSD1306�ܻᷢACK�� */
     OLED_SDA = 1;
     i2c_delay();
     OLED_SCL = 1; i2c_delay();
@@ -166,70 +166,70 @@ static void i2c_write_byte(unsigned char dat)
 }
 
 /*------------------------------------------------------------
- * oled_write_cmd()  发送命令字节到SSD1306
+ * oled_write_cmd()  ���������ֽڵ�SSD1306
  *------------------------------------------------------------*/
 static void oled_write_cmd(unsigned char cmd)
 {
     i2c_start();
-    i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* 写地址 */
-    i2c_write_byte(0x00);                        /* Control byte: Co=0, D/C=0 命令 */
+    i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* д��ַ */
+    i2c_write_byte(0x00);                        /* Control byte: Co=0, D/C=0 ���� */
     i2c_write_byte(cmd);
     i2c_stop();
 }
 
 /*------------------------------------------------------------
- * oled_write_dat()  发送数据字节到SSD1306（写入GDDRAM）
+ * oled_write_dat()  ���������ֽڵ�SSD1306��д��GDDRAM��
  *------------------------------------------------------------*/
 static void oled_write_dat(unsigned char dat)
 {
     i2c_start();
-    i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* 写地址 */
-    i2c_write_byte(0x40);                        /* Control byte: Co=0, D/C=1 数据 */
+    i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* д��ַ */
+    i2c_write_byte(0x40);                        /* Control byte: Co=0, D/C=1 ���� */
     i2c_write_byte(dat);
     i2c_stop();
 }
 
 /*------------------------------------------------------------
- * oled_set_pos()  设置显示起始位置（Page模式）
- *   x: 列地址  0~127
- *   y: Page地址 0~7（y=0对应最上方8像素行）
+ * oled_set_pos()  ������ʾ��ʼλ�ã�Pageģʽ��
+ *   x: �е�ַ  0~127
+ *   y: Page��ַ 0~7��y=0��Ӧ���Ϸ�8�����У�
  *------------------------------------------------------------*/
 static void oled_set_pos(unsigned char x, unsigned char y)
 {
-    oled_write_cmd(0xB0 | (y & 0x07));          /* 设置Page地址 */
-    oled_write_cmd(0x00 | (x & 0x0F));          /* 列地址低4位  */
-    oled_write_cmd(0x10 | ((x >> 4) & 0x0F));   /* 列地址高4位  */
+    oled_write_cmd(0xB0 | (y & 0x07));          /* ����Page��ַ */
+    oled_write_cmd(0x00 | (x & 0x0F));          /* �е�ַ��4λ  */
+    oled_write_cmd(0x10 | ((x >> 4) & 0x0F));   /* �е�ַ��4λ  */
 }
 
 /*============================================================
- *  公开函数实现
+ *  ��������ʵ��
  *============================================================*/
 
 /*------------------------------------------------------------
- * OLED_Init()  SSD1306初始化（标准上电初始化序列）
+ * OLED_Init()  SSD1306��ʼ������׼�ϵ��ʼ�����У�
  *------------------------------------------------------------*/
 void OLED_Init(void)
 {
     unsigned char i;
-    /* SSD1306标准初始化命令序列 */
+    /* SSD1306��׼��ʼ���������� */
     static code unsigned char init_seq[] =
     {
-        0xAE,           /* 关闭显示（初始化期间）         */
-        0x00, 0x10,     /* 设置列起始地址低/高位（Page模式）*/
-        0x40,           /* 设置显示起始行 = 0             */
-        0x81, 0xFF,     /* 设置对比度 = 0xFF（最亮）      */
-        0xA1,           /* 列反向 Segment Remap（左→右）  */
-        0xA6,           /* 正常显示（0=黑，1=亮）         */
-        0xA8, 0x3F,     /* 多路复用率 = 64（0x3F）        */
-        0xC8,           /* COM扫描方向 = 从COM63到COM0    */
-        0xD3, 0x00,     /* 显示偏移 = 0                   */
-        0xD5, 0x80,     /* 时钟分频/震荡频率              */
-        0xD9, 0xF1,     /* 预充电周期                     */
-        0xDA, 0x12,     /* COM引脚硬件配置                */
-        0xDB, 0x40,     /* VCOMH反压电平                  */
-        0x20, 0x02,     /* 内存寻址模式 = 页面寻址模式    */
-        0x8D, 0x14,     /* 使能电荷泵（对于内置升压的模块）*/
-        0xAF,           /* 打开显示                       */
+        0xAE,           /* �ر���ʾ����ʼ���ڼ䣩         */
+        0x00, 0x10,     /* ��������ʼ��ַ��/��λ��Pageģʽ��*/
+        0x40,           /* ������ʾ��ʼ�� = 0             */
+        0x81, 0xFF,     /* ���öԱȶ� = 0xFF��������      */
+        0xA1,           /* �з��� Segment Remap������ң�  */
+        0xA6,           /* ������ʾ��0=�ڣ�1=����         */
+        0xA8, 0x3F,     /* ��·������ = 64��0x3F��        */
+        0xC8,           /* COMɨ�跽�� = ��COM63��COM0    */
+        0xD3, 0x00,     /* ��ʾƫ�� = 0                   */
+        0xD5, 0x80,     /* ʱ�ӷ�Ƶ/��Ƶ��              */
+        0xD9, 0xF1,     /* Ԥ�������                     */
+        0xDA, 0x12,     /* COM����Ӳ������                */
+        0xDB, 0x40,     /* VCOMH��ѹ��ƽ                  */
+        0x20, 0x02,     /* �ڴ�Ѱַģʽ = ҳ��Ѱַģʽ    */
+        0x8D, 0x14,     /* ʹ�ܵ�ɱã�����������ѹ��ģ�飩*/
+        0xAF,           /* ����ʾ                       */
     };
 
     for (i = 0; i < sizeof(init_seq); i++)
@@ -237,7 +237,7 @@ void OLED_Init(void)
 }
 
 /*------------------------------------------------------------
- * OLED_Clear()  全屏清空（所有像素置0=黑）
+ * OLED_Clear()  ȫ����գ�����������0=�ڣ�
  *------------------------------------------------------------*/
 void OLED_Clear(void)
 {
@@ -251,10 +251,10 @@ void OLED_Clear(void)
 }
 
 /*------------------------------------------------------------
- * OLED_ShowChar()  显示单个ASCII字符（8×16点阵）
- *   x   : 列地址（0~120，8的倍数时对齐）
- *   y   : Page地址（0,2,4,6 → 行0,1,2,3）
- *   c   : ASCII字符（0x20~0x7E）
+ * OLED_ShowChar()  ��ʾ����ASCII�ַ���8��16����
+ *   x   : �е�ַ��0~120��8�ı���ʱ���룩
+ *   y   : Page��ַ��0,2,4,6 �� ��0,1,2,3��
+ *   c   : ASCII�ַ���0x20~0x7E��
  *------------------------------------------------------------*/
 void OLED_ShowChar(unsigned char x, unsigned char y, char c)
 {
@@ -262,47 +262,47 @@ void OLED_ShowChar(unsigned char x, unsigned char y, char c)
     unsigned char idx;
 
     if (c < 0x20 || c > 0x7E)
-        c = ' ';                    /* 超出范围显示空格 */
+        c = ' ';                    /* ������Χ��ʾ�ո� */
     idx = (unsigned char)(c - 0x20);
 
-    /* 上半部分（Page = y） */
+    /* �ϰ벿�֣�Page = y�� */
     oled_set_pos(x, y);
     for (i = 0; i < 8; i++)
         oled_write_dat(F8X16[idx][i]);
 
-    /* 下半部分（Page = y+1） */
+    /* �°벿�֣�Page = y+1�� */
     oled_set_pos(x, y + 1);
     for (i = 0; i < 8; i++)
         oled_write_dat(F8X16[idx][i + 8]);
 }
 
 /*------------------------------------------------------------
- * OLED_ShowStr()  显示ASCII字符串
- *   x  : 起始列地址
- *   y  : Page地址（0,2,4,6）
- *   str: 以'\0'结尾的字符串
+ * OLED_ShowStr()  ��ʾASCII�ַ���
+ *   x  : ��ʼ�е�ַ
+ *   y  : Page��ַ��0,2,4,6��
+ *   str: ��'\0'��β���ַ���
  *------------------------------------------------------------*/
 void OLED_ShowStr(unsigned char x, unsigned char y, char *str)
 {
     while (*str != '\0')
     {
         OLED_ShowChar(x, y, *str);
-        x += 8;         /* 每字符宽8像素，向右移动 */
-        if (x >= 128)   /* 超出屏宽，换行 */
+        x += 8;         /* ÿ�ַ���8���أ������ƶ� */
+        if (x >= 128)   /* �������������� */
         {
             x = 0;
-            y += 2;     /* 8×16字体，每行占2个Page */
+            y += 2;     /* 8��16���壬ÿ��ռ2��Page */
         }
         str++;
     }
 }
 
 /*------------------------------------------------------------
- * OLED_ShowNum()  显示无符号整数（0~65535）
- *   x    : 起始列地址
- *   y    : Page地址
- *   num  : 要显示的数值
- *   len  : 显示位数（不足补空格前导）
+ * OLED_ShowNum()  ��ʾ�޷���������0~65535��
+ *   x    : ��ʼ�е�ַ
+ *   y    : Page��ַ
+ *   num  : Ҫ��ʾ����ֵ
+ *   len  : ��ʾλ�������㲹�ո�ǰ����
  *------------------------------------------------------------*/
 void OLED_ShowNum(unsigned char x, unsigned char y,
                   unsigned int num, unsigned char len)
@@ -310,7 +310,7 @@ void OLED_ShowNum(unsigned char x, unsigned char y,
     unsigned char buf[6];
     unsigned char i;
 
-    /* 从低位到高位提取各位数字 */
+    /* �ӵ�λ����λ��ȡ��λ���� */
     for (i = 0; i < len; i++)
     {
         buf[len - 1 - i] = (unsigned char)(num % 10) + '0';
@@ -322,22 +322,22 @@ void OLED_ShowNum(unsigned char x, unsigned char y,
 }
 
 /*------------------------------------------------------------
- * OLED_RefreshAll()  根据系统状态刷新整屏显示
- *   adc_val   : ADC0832采集值（0~255）
- *   rain_lv   : 雨量等级（0=无雨,1=小雨,2=中雨,3=大雨）
- *   pwm_duty  : PWM占空比（0~99，单位%）
- *   auto_mode : 运行模式（1=自动，0=手动）
+ * OLED_RefreshAll()  ����ϵͳ״̬ˢ��������ʾ
+ *   adc_val   : ADC0832�ɼ�ֵ��0~255��
+ *   rain_lv   : �����ȼ���0=����,1=С��,2=����,3=���꣩
+ *   pwm_duty  : PWMռ�ձȣ�0~99����λ%��
+ *   auto_mode : ����ģʽ��1=�Զ���0=�ֶ���
  *------------------------------------------------------------*/
 void OLED_RefreshAll(unsigned char adc_val,
                      unsigned char rain_lv,
                      unsigned char pwm_duty,
                      unsigned char auto_mode)
 {
-    /* === 第1行（y=0）：ADC值 === */
+    /* === ��1�У�y=0����ADCֵ === */
     OLED_ShowStr(0, 0, "ADC:   ");
-    OLED_ShowNum(32, 0, adc_val, 3);    /* 例："ADC:189" */
+    OLED_ShowNum(32, 0, adc_val, 3);    /* ����"ADC:189" */
 
-    /* === 第2行（y=2）：雨量等级 === */
+    /* === ��2�У�y=2���������ȼ� === */
     OLED_ShowStr(0, 2, "Lv:");
     switch (rain_lv)
     {
@@ -348,12 +348,12 @@ void OLED_RefreshAll(unsigned char adc_val,
         default: OLED_ShowStr(24, 2, "---      "); break;
     }
 
-    /* === 第3行（y=4）：PWM占空比 === */
+    /* === ��3�У�y=4����PWMռ�ձ� === */
     OLED_ShowStr(0, 4, "PWM:");
     OLED_ShowNum(32, 4, pwm_duty, 2);
     OLED_ShowStr(48, 4, "%       ");
 
-    /* === 第4行（y=6）：运行模式 === */
+    /* === ��4�У�y=6��������ģʽ === */
     if (auto_mode)
         OLED_ShowStr(0, 6, "Mode:AUTO   ");
     else
@@ -361,15 +361,15 @@ void OLED_RefreshAll(unsigned char adc_val,
 }
 
 /*------------------------------------------------------------
- * OLED_ShowBootScreen()  上电开机画面（含个人信息，显示2秒）
- * PCB丝印信息与OLED开机画面保持一致：
- *   五邑大学  220710班  3222004950  梁嘉惠
+ * OLED_ShowBootScreen()  �ϵ翪�����棨��������Ϣ����ʾ2�룩
+ * PCB˿ӡ��Ϣ��OLED�������汣��һ�£�
+ *   ���ش�ѧ  220710��  3222004950  ���λ�
  *------------------------------------------------------------*/
 void OLED_ShowBootScreen(void)
 {
     OLED_Clear();
-    OLED_ShowStr(0, 0, "RainWiper V4.0");   /* 第1行：项目名 */
-    OLED_ShowStr(0, 2, "Wuyiu  Univ.  ");   /* 第2行：五邑大学（拼音）*/
-    OLED_ShowStr(0, 4, "220710 3222004950"); /* 第3行：班级+学号 */
-    OLED_ShowStr(0, 6, "Liang  JiaoHui");   /* 第4行：梁嘉惠（拼音） */
+    OLED_ShowStr(0, 0, "RainWiper V4.0");   /* ��1�У���Ŀ�� */
+    OLED_ShowStr(0, 2, "Wuyiu  Univ.  ");   /* ��2�У����ش�ѧ��ƴ����*/
+    OLED_ShowStr(0, 4, "220710 3222004950"); /* ��3�У��༶+ѧ�� */
+    OLED_ShowStr(0, 6, "Liang  JiaoHui");   /* ��4�У����λݣ�ƴ���� */
 }

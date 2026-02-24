@@ -1,0 +1,6 @@
+".\Objects\STARTUP.obj",
+".\Objects\ADC0832.obj",
+".\Objects\main.obj",
+".\Objects\oled.obj" 
+TO ".\Objects\RainWiper" 
+PRINT(".\Listings\RainWiper.m51") RAMSIZE(256) 

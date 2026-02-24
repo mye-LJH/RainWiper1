@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 1   
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 1   
 
 
 C51 COMPILER V9.60.7.0, COMPILATION OF MODULE OLED
@@ -9,34 +9,33 @@ COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE oled.c OPTIMIZE(8,SPEED) BROWSE 
 line level    source
 
    1          /*============================================================
-   2           * oled.c  --  SSD1306 OLED I2C驱动完整实现（软件模拟I2C）
+   2           * oled.c  --  SSD1306 OLED I2C��������ʵ�֣�����ģ��I2C��
    3           *
-   4           * 项目：基于STC89C52单片机的智能汽车雨刮器模拟系统
-   5           * 作者：梁嘉惠  学号：3222004950
-   6           * 学校：五邑大学 电子与信息工程学院  班级：220710
-   7           * 指导教师：龙佳乐 副教授
-   8           * 编译器：Keil C51  主频：11.0592MHz
+   4           * ��Ŀ������STC89C52��Ƭ�����������������ģ��ϵͳ
+   5           * ���ߣ����λ�  ѧ�ţ�3222004950
+   6           * ѧУ�����ش�ѧ ��������Ϣ����ѧԺ  �༶��220710
+   7           * ָ����ʦ�������� ������
+   8           * ��������Keil C51  ��Ƶ��11.0592MHz
    9           *============================================================
-  10           * 实现说明：
-  11           *  - 采用软件模拟I2C（P1.6=SCL, P1.7=SDA）
-  12           *  - SSD1306工作在Page寻址模式（0x02命令设置）
-  13           *  - 8×16 ASCII字库，支持空格(0x20)到波浪号(0x7E)全范围
-  14           *  - OLED_ShowStr/ShowChar/ShowNum均基于Page模式定位
-  15           *  - 注意：STC89C52 P1口为准双向口，SDA输出0时为强驱动低，
-  16           *    SDA输出1时为弱上拉，I2C上拉电阻(4.7kΩ)保证信号质量
+  10           * ʵ��˵����
+  11           *  - ��������ģ��I2C��P1.6=SCL, P1.7=SDA��
+  12           *  - SSD1306������PageѰַģʽ��0x02�������ã�
+  13           *  - 8��16 ASCII�ֿ⣬֧�ֿո�(0x20)�����˺�(0x7E)ȫ��Χ
+  14           *  - OLED_ShowStr/ShowChar/ShowNum������Pageģʽ��λ
+  15           *  - ע�⣺STC89C52 P1��Ϊ׼˫��ڣ�SDA���0ʱΪǿ�����ͣ�
+  16           *    SDA���1ʱΪ��������I2C��������(4.7k��)��֤�ź�����
   17           *============================================================*/
   18          
   19          #include "oled.h"
-*** WARNING C318 IN LINE 19 OF oled.c: can't open file 'oled.h'
   20          #include <string.h>
   21          
   22          /*============================================================
-  23           * 8×16 ASCII点阵字库（0x20~0x7E，每字符16字节）
-  24           * 格式：先上8行(Page0)，再下8行(Page1)，列从左到右
-  25           * 字符宽度8像素，高度16像素（占用2个Page）
+  23           * 8��16 ASCII�����ֿ⣨0x20~0x7E��ÿ�ַ�16�ֽڣ�
+  24           * ��ʽ������8��(Page0)������8��(Page1)���д�����
+  25           * �ַ�����8���أ��߶�16���أ�ռ��2��Page��
   26           *============================================================*/
   27          code unsigned char F8X16[][16] = {
-  28          /* 0x20 空格 ' ' */  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
+  28          /* 0x20 �ո� ' ' */  {0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
   29          /* 0x21 '!' */       {0x00,0x00,0x00,0xF8,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x33,0x00,0x00,0x00,0x00},
   30          /* 0x22 '"' */       {0x00,0x10,0x0C,0x06,0x10,0x0C,0x06,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00},
   31          /* 0x23 '#' */       {0x40,0xC0,0x78,0x40,0xC0,0x78,0x40,0x00,0x04,0x3F,0x04,0x04,0x3F,0x04,0x04,0x00},
@@ -62,9 +61,9 @@ line level    source
   51          /* 0x37 '7' */       {0x00,0x18,0x08,0x08,0xC8,0x38,0x08,0x00,0x00,0x00,0x00,0x3F,0x00,0x00,0x00,0x00},
   52          /* 0x38 '8' */       {0x00,0x70,0x88,0x08,0x08,0x88,0x70,0x00,0x00,0x1C,0x22,0x21,0x21,0x22,0x1C,0x00},
   53          /* 0x39 '9' */       {0x00,0x70,0x88,0x08,0x08,0x88,0x70,0x00,0x00,0x00,0x21,0x21,0x11,0x0E,0x00,0x00},
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 2   
-
   54          /* 0x3A ':' */       {0x00,0x00,0x00,0xC0,0xC0,0x00,0x00,0x00,0x00,0x00,0x00,0x30,0x30,0x00,0x00,0x00},
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 2   
+
   55          /* 0x3B ';' */       {0x00,0x00,0x00,0x80,0x00,0x00,0x00,0x00,0x00,0x00,0x80,0x60,0x00,0x00,0x00,0x00},
   56          /* 0x3C '<' */       {0x00,0x00,0x80,0x40,0x20,0x10,0x08,0x00,0x00,0x01,0x02,0x04,0x08,0x10,0x20,0x00},
   57          /* 0x3D '=' */       {0x40,0x40,0x40,0x40,0x40,0x40,0x40,0x00,0x04,0x04,0x04,0x04,0x04,0x04,0x04,0x00},
@@ -126,9 +125,9 @@ line level    source
  113          /* 0x75 'u' */       {0x80,0x80,0x00,0x00,0x00,0x80,0x80,0x00,0x00,0x1F,0x20,0x20,0x20,0x10,0x3F,0x20},
  114          /* 0x76 'v' */       {0x80,0x80,0x80,0x00,0x80,0x80,0x80,0x00,0x00,0x01,0x0E,0x30,0x08,0x06,0x01,0x00},
  115          /* 0x77 'w' */       {0x80,0x80,0x00,0x80,0x00,0x80,0x80,0x80,0x0F,0x30,0x0C,0x03,0x0C,0x30,0x0F,0x00},
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 3   
-
  116          /* 0x78 'x' */       {0x00,0x80,0x80,0x00,0x00,0x80,0x80,0x00,0x00,0x20,0x31,0x2E,0x0E,0x31,0x20,0x00},
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 3   
+
  117          /* 0x79 'y' */       {0x80,0x80,0x80,0x00,0x00,0x80,0x80,0x80,0x00,0x81,0x8E,0x70,0x18,0x06,0x01,0x00},
  118          /* 0x7A 'z' */       {0x00,0x80,0x80,0x80,0x80,0x80,0x80,0x00,0x00,0x21,0x30,0x2C,0x22,0x21,0x30,0x00},
  119          /* 0x7B '{' */       {0x00,0x00,0x00,0x00,0x80,0x7C,0x02,0x02,0x00,0x00,0x00,0x10,0x39,0x06,0x00,0x00},
@@ -138,37 +137,28 @@ line level    source
  123          };
  124          
  125          /*============================================================
- 126           *  软件I2C底层函数
+ 126           *  ����I2C�ײ㺯��
  127           *============================================================*/
  128          
  129          static void i2c_delay(void)
  130          {
  131   1          _nop_(); _nop_(); _nop_(); _nop_();
-*** WARNING C206 IN LINE 131 OF oled.c: '_nop_': missing function-prototype
-*** ERROR C264 IN LINE 131 OF oled.c: intrinsic '_nop_': declaration/activation error
  132   1          _nop_(); _nop_(); _nop_(); _nop_();
  133   1      }
  134          
  135          static void i2c_start(void)
  136          {
  137   1          OLED_SDA = 1; i2c_delay();
-*** ERROR C202 IN LINE 137 OF oled.c: 'OLED_SDA': undefined identifier
  138   1          OLED_SCL = 1; i2c_delay();
-*** ERROR C202 IN LINE 138 OF oled.c: 'OLED_SCL': undefined identifier
- 139   1          OLED_SDA = 0; i2c_delay();     /* SDA下降沿（SCL高期间） = START */
-*** ERROR C202 IN LINE 139 OF oled.c: 'OLED_SDA': undefined identifier
+ 139   1          OLED_SDA = 0; i2c_delay();     /* SDA�½��أ�SCL���ڼ䣩 = START */
  140   1          OLED_SCL = 0; i2c_delay();
-*** ERROR C202 IN LINE 140 OF oled.c: 'OLED_SCL': undefined identifier
  141   1      }
  142          
  143          static void i2c_stop(void)
  144          {
  145   1          OLED_SDA = 0; i2c_delay();
-*** ERROR C202 IN LINE 145 OF oled.c: 'OLED_SDA': undefined identifier
  146   1          OLED_SCL = 1; i2c_delay();
-*** ERROR C202 IN LINE 146 OF oled.c: 'OLED_SCL': undefined identifier
- 147   1          OLED_SDA = 1; i2c_delay();     /* SDA上升沿（SCL高期间） = STOP  */
-*** ERROR C202 IN LINE 147 OF oled.c: 'OLED_SDA': undefined identifier
+ 147   1          OLED_SDA = 1; i2c_delay();     /* SDA�����أ�SCL���ڼ䣩 = STOP  */
  148   1      }
  149          
  150          static void i2c_write_byte(unsigned char dat)
@@ -177,95 +167,85 @@ line level    source
  153   1          for (i = 0; i < 8; i++)
  154   1          {
  155   2              OLED_SDA = (dat & 0x80) ? 1 : 0;
-*** ERROR C202 IN LINE 155 OF oled.c: 'OLED_SDA': undefined identifier
  156   2              dat <<= 1;
  157   2              i2c_delay();
  158   2              OLED_SCL = 1; i2c_delay();
-*** ERROR C202 IN LINE 158 OF oled.c: 'OLED_SCL': undefined identifier
  159   2              OLED_SCL = 0; i2c_delay();
-*** ERROR C202 IN LINE 159 OF oled.c: 'OLED_SCL': undefined identifier
  160   2          }
- 161   1          /* 接收ACK（此处忽略ACK，简化实现；实际使用中SSD1306总会发ACK） */
+ 161   1          /* ����ACK���˴�����ACK����ʵ�֣�ʵ��ʹ����SSD1306�ܻᷢACK�� */
  162   1          OLED_SDA = 1;
-*** ERROR C202 IN LINE 162 OF oled.c: 'OLED_SDA': undefined identifier
  163   1          i2c_delay();
  164   1          OLED_SCL = 1; i2c_delay();
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 4   
-
-*** ERROR C202 IN LINE 164 OF oled.c: 'OLED_SCL': undefined identifier
  165   1          OLED_SCL = 0; i2c_delay();
-*** ERROR C202 IN LINE 165 OF oled.c: 'OLED_SCL': undefined identifier
  166   1      }
  167          
  168          /*------------------------------------------------------------
- 169           * oled_write_cmd()  发送命令字节到SSD1306
+ 169           * oled_write_cmd()  ���������ֽڵ�SSD1306
  170           *------------------------------------------------------------*/
  171          static void oled_write_cmd(unsigned char cmd)
  172          {
  173   1          i2c_start();
- 174   1          i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* 写地址 */
-*** ERROR C202 IN LINE 174 OF oled.c: 'OLED_ADDR': undefined identifier
- 175   1          i2c_write_byte(0x00);                        /* Control byte: Co=0, D/C=0 命令 */
+ 174   1          i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* д��ַ */
+ 175   1          i2c_write_byte(0x00);                        /* Control byte: Co=0, D/C=0 ���� */
  176   1          i2c_write_byte(cmd);
  177   1          i2c_stop();
  178   1      }
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 4   
+
  179          
  180          /*------------------------------------------------------------
- 181           * oled_write_dat()  发送数据字节到SSD1306（写入GDDRAM）
+ 181           * oled_write_dat()  ���������ֽڵ�SSD1306��д��GDDRAM��
  182           *------------------------------------------------------------*/
  183          static void oled_write_dat(unsigned char dat)
  184          {
  185   1          i2c_start();
- 186   1          i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* 写地址 */
-*** ERROR C202 IN LINE 186 OF oled.c: 'OLED_ADDR': undefined identifier
- 187   1          i2c_write_byte(0x40);                        /* Control byte: Co=0, D/C=1 数据 */
+ 186   1          i2c_write_byte((OLED_ADDR << 1) | 0x00);   /* д��ַ */
+ 187   1          i2c_write_byte(0x40);                        /* Control byte: Co=0, D/C=1 ���� */
  188   1          i2c_write_byte(dat);
  189   1          i2c_stop();
  190   1      }
  191          
  192          /*------------------------------------------------------------
- 193           * oled_set_pos()  设置显示起始位置（Page模式）
- 194           *   x: 列地址  0~127
- 195           *   y: Page地址 0~7（y=0对应最上方8像素行）
+ 193           * oled_set_pos()  ������ʾ��ʼλ�ã�Pageģʽ��
+ 194           *   x: �е�ַ  0~127
+ 195           *   y: Page��ַ 0~7��y=0��Ӧ���Ϸ�8�����У�
  196           *------------------------------------------------------------*/
  197          static void oled_set_pos(unsigned char x, unsigned char y)
  198          {
- 199   1          oled_write_cmd(0xB0 | (y & 0x07));          /* 设置Page地址 */
- 200   1          oled_write_cmd(0x00 | (x & 0x0F));          /* 列地址低4位  */
- 201   1          oled_write_cmd(0x10 | ((x >> 4) & 0x0F));   /* 列地址高4位  */
+ 199   1          oled_write_cmd(0xB0 | (y & 0x07));          /* ����Page��ַ */
+ 200   1          oled_write_cmd(0x00 | (x & 0x0F));          /* �е�ַ��4λ  */
+ 201   1          oled_write_cmd(0x10 | ((x >> 4) & 0x0F));   /* �е�ַ��4λ  */
  202   1      }
  203          
  204          /*============================================================
- 205           *  公开函数实现
+ 205           *  ��������ʵ��
  206           *============================================================*/
  207          
  208          /*------------------------------------------------------------
- 209           * OLED_Init()  SSD1306初始化（标准上电初始化序列）
+ 209           * OLED_Init()  SSD1306��ʼ������׼�ϵ��ʼ�����У�
  210           *------------------------------------------------------------*/
  211          void OLED_Init(void)
  212          {
  213   1          unsigned char i;
- 214   1          /* SSD1306标准初始化命令序列 */
+ 214   1          /* SSD1306��׼��ʼ���������� */
  215   1          static code unsigned char init_seq[] =
  216   1          {
- 217   1              0xAE,           /* 关闭显示（初始化期间）         */
- 218   1              0x00, 0x10,     /* 设置列起始地址低/高位（Page模式）*/
- 219   1              0x40,           /* 设置显示起始行 = 0             */
- 220   1              0x81, 0xFF,     /* 设置对比度 = 0xFF（最亮）      */
- 221   1              0xA1,           /* 列反向 Segment Remap（左→右）  */
- 222   1              0xA6,           /* 正常显示（0=黑，1=亮）         */
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 5   
-
- 223   1              0xA8, 0x3F,     /* 多路复用率 = 64（0x3F）        */
- 224   1              0xC8,           /* COM扫描方向 = 从COM63到COM0    */
- 225   1              0xD3, 0x00,     /* 显示偏移 = 0                   */
- 226   1              0xD5, 0x80,     /* 时钟分频/震荡频率              */
- 227   1              0xD9, 0xF1,     /* 预充电周期                     */
- 228   1              0xDA, 0x12,     /* COM引脚硬件配置                */
- 229   1              0xDB, 0x40,     /* VCOMH反压电平                  */
- 230   1              0x20, 0x02,     /* 内存寻址模式 = 页面寻址模式    */
- 231   1              0x8D, 0x14,     /* 使能电荷泵（对于内置升压的模块）*/
- 232   1              0xAF,           /* 打开显示                       */
+ 217   1              0xAE,           /* �ر���ʾ����ʼ���ڼ䣩         */
+ 218   1              0x00, 0x10,     /* ��������ʼ��ַ��/��λ��Pageģʽ��*/
+ 219   1              0x40,           /* ������ʾ��ʼ�� = 0             */
+ 220   1              0x81, 0xFF,     /* ���öԱȶ� = 0xFF��������      */
+ 221   1              0xA1,           /* �з��� Segment Remap������ң�  */
+ 222   1              0xA6,           /* ������ʾ��0=�ڣ�1=����         */
+ 223   1              0xA8, 0x3F,     /* ��·������ = 64��0x3F��        */
+ 224   1              0xC8,           /* COMɨ�跽�� = ��COM63��COM0    */
+ 225   1              0xD3, 0x00,     /* ��ʾƫ�� = 0                   */
+ 226   1              0xD5, 0x80,     /* ʱ�ӷ�Ƶ/��Ƶ��              */
+ 227   1              0xD9, 0xF1,     /* Ԥ�������                     */
+ 228   1              0xDA, 0x12,     /* COM����Ӳ������                */
+ 229   1              0xDB, 0x40,     /* VCOMH��ѹ��ƽ                  */
+ 230   1              0x20, 0x02,     /* �ڴ�Ѱַģʽ = ҳ��Ѱַģʽ    */
+ 231   1              0x8D, 0x14,     /* ʹ�ܵ�ɱã�����������ѹ��ģ�飩*/
+ 232   1              0xAF,           /* ����ʾ                       */
  233   1          };
  234   1      
  235   1          for (i = 0; i < sizeof(init_seq); i++)
@@ -273,7 +253,9 @@ line level    source
  237   1      }
  238          
  239          /*------------------------------------------------------------
- 240           * OLED_Clear()  全屏清空（所有像素置0=黑）
+ 240           * OLED_Clear()  ȫ����գ�����������0=�ڣ�
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 5   
+
  241           *------------------------------------------------------------*/
  242          void OLED_Clear(void)
  243          {
@@ -287,10 +269,10 @@ line level    source
  251   1      }
  252          
  253          /*------------------------------------------------------------
- 254           * OLED_ShowChar()  显示单个ASCII字符（8×16点阵）
- 255           *   x   : 列地址（0~120，8的倍数时对齐）
- 256           *   y   : Page地址（0,2,4,6 → 行0,1,2,3）
- 257           *   c   : ASCII字符（0x20~0x7E）
+ 254           * OLED_ShowChar()  ��ʾ����ASCII�ַ���8��16����
+ 255           *   x   : �е�ַ��0~120��8�ı���ʱ���룩
+ 256           *   y   : Page��ַ��0,2,4,6 �� ��0,1,2,3��
+ 257           *   c   : ASCII�ַ���0x20~0x7E��
  258           *------------------------------------------------------------*/
  259          void OLED_ShowChar(unsigned char x, unsigned char y, char c)
  260          {
@@ -298,49 +280,49 @@ line level    source
  262   1          unsigned char idx;
  263   1      
  264   1          if (c < 0x20 || c > 0x7E)
- 265   1              c = ' ';                    /* 超出范围显示空格 */
+ 265   1              c = ' ';                    /* ������Χ��ʾ�ո� */
  266   1          idx = (unsigned char)(c - 0x20);
  267   1      
- 268   1          /* 上半部分（Page = y） */
+ 268   1          /* �ϰ벿�֣�Page = y�� */
  269   1          oled_set_pos(x, y);
  270   1          for (i = 0; i < 8; i++)
  271   1              oled_write_dat(F8X16[idx][i]);
  272   1      
- 273   1          /* 下半部分（Page = y+1） */
+ 273   1          /* �°벿�֣�Page = y+1�� */
  274   1          oled_set_pos(x, y + 1);
  275   1          for (i = 0; i < 8; i++)
  276   1              oled_write_dat(F8X16[idx][i + 8]);
  277   1      }
  278          
  279          /*------------------------------------------------------------
- 280           * OLED_ShowStr()  显示ASCII字符串
- 281           *   x  : 起始列地址
- 282           *   y  : Page地址（0,2,4,6）
- 283           *   str: 以'\0'结尾的字符串
+ 280           * OLED_ShowStr()  ��ʾASCII�ַ���
+ 281           *   x  : ��ʼ�е�ַ
+ 282           *   y  : Page��ַ��0,2,4,6��
+ 283           *   str: ��'\0'��β���ַ���
  284           *------------------------------------------------------------*/
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 6   
-
  285          void OLED_ShowStr(unsigned char x, unsigned char y, char *str)
  286          {
  287   1          while (*str != '\0')
  288   1          {
  289   2              OLED_ShowChar(x, y, *str);
- 290   2              x += 8;         /* 每字符宽8像素，向右移动 */
- 291   2              if (x >= 128)   /* 超出屏宽，换行 */
+ 290   2              x += 8;         /* ÿ�ַ���8���أ������ƶ� */
+ 291   2              if (x >= 128)   /* �������������� */
  292   2              {
  293   3                  x = 0;
- 294   3                  y += 2;     /* 8×16字体，每行占2个Page */
+ 294   3                  y += 2;     /* 8��16���壬ÿ��ռ2��Page */
  295   3              }
  296   2              str++;
  297   2          }
  298   1      }
  299          
  300          /*------------------------------------------------------------
- 301           * OLED_ShowNum()  显示无符号整数（0~65535）
- 302           *   x    : 起始列地址
- 303           *   y    : Page地址
- 304           *   num  : 要显示的数值
- 305           *   len  : 显示位数（不足补空格前导）
+ 301           * OLED_ShowNum()  ��ʾ�޷���������0~65535��
+ 302           *   x    : ��ʼ�е�ַ
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 6   
+
+ 303           *   y    : Page��ַ
+ 304           *   num  : Ҫ��ʾ����ֵ
+ 305           *   len  : ��ʾλ�������㲹�ո�ǰ����
  306           *------------------------------------------------------------*/
  307          void OLED_ShowNum(unsigned char x, unsigned char y,
  308                            unsigned int num, unsigned char len)
@@ -348,7 +330,7 @@ line level    source
  310   1          unsigned char buf[6];
  311   1          unsigned char i;
  312   1      
- 313   1          /* 从低位到高位提取各位数字 */
+ 313   1          /* �ӵ�λ����λ��ȡ��λ���� */
  314   1          for (i = 0; i < len; i++)
  315   1          {
  316   2              buf[len - 1 - i] = (unsigned char)(num % 10) + '0';
@@ -360,40 +342,38 @@ line level    source
  322   1      }
  323          
  324          /*------------------------------------------------------------
- 325           * OLED_RefreshAll()  根据系统状态刷新整屏显示
- 326           *   adc_val   : ADC0832采集值（0~255）
- 327           *   rain_lv   : 雨量等级（0=无雨,1=小雨,2=中雨,3=大雨）
- 328           *   pwm_duty  : PWM占空比（0~99，单位%）
- 329           *   auto_mode : 运行模式（1=自动，0=手动）
+ 325           * OLED_RefreshAll()  ����ϵͳ״̬ˢ��������ʾ
+ 326           *   adc_val   : ADC0832�ɼ�ֵ��0~255��
+ 327           *   rain_lv   : �����ȼ���0=����,1=С��,2=����,3=���꣩
+ 328           *   pwm_duty  : PWMռ�ձȣ�0~99����λ%��
+ 329           *   auto_mode : ����ģʽ��1=�Զ���0=�ֶ���
  330           *------------------------------------------------------------*/
  331          void OLED_RefreshAll(unsigned char adc_val,
  332                               unsigned char rain_lv,
  333                               unsigned char pwm_duty,
  334                               unsigned char auto_mode)
  335          {
- 336   1          /* === 第1行（y=0）：ADC值 === */
+ 336   1          /* === ��1�У�y=0����ADCֵ === */
  337   1          OLED_ShowStr(0, 0, "ADC:   ");
- 338   1          OLED_ShowNum(32, 0, adc_val, 3);    /* 例："ADC:189" */
+ 338   1          OLED_ShowNum(32, 0, adc_val, 3);    /* ����"ADC:189" */
  339   1      
- 340   1          /* === 第2行（y=2）：雨量等级 === */
+ 340   1          /* === ��2�У�y=2���������ȼ� === */
  341   1          OLED_ShowStr(0, 2, "Lv:");
  342   1          switch (rain_lv)
  343   1          {
  344   2              case 0: OLED_ShowStr(24, 2, "None     "); break;
  345   2              case 1: OLED_ShowStr(24, 2, "Light    "); break;
  346   2              case 2: OLED_ShowStr(24, 2, "Mid      "); break;
-C51 COMPILER V9.60.7.0   OLED                                                              02/24/2026 23:35:53 PAGE 7   
-
  347   2              case 3: OLED_ShowStr(24, 2, "Heavy    "); break;
  348   2              default: OLED_ShowStr(24, 2, "---      "); break;
  349   2          }
  350   1      
- 351   1          /* === 第3行（y=4）：PWM占空比 === */
+ 351   1          /* === ��3�У�y=4����PWMռ�ձ� === */
  352   1          OLED_ShowStr(0, 4, "PWM:");
  353   1          OLED_ShowNum(32, 4, pwm_duty, 2);
  354   1          OLED_ShowStr(48, 4, "%       ");
  355   1      
- 356   1          /* === 第4行（y=6）：运行模式 === */
+ 356   1          /* === ��4�У�y=6��������ģʽ === */
  357   1          if (auto_mode)
  358   1              OLED_ShowStr(0, 6, "Mode:AUTO   ");
  359   1          else
@@ -401,17 +381,31 @@ line level    source
  361   1      }
  362          
  363          /*------------------------------------------------------------
- 364           * OLED_ShowBootScreen()  上电开机画面（含个人信息，显示2秒）
- 365           * PCB丝印信息与OLED开机画面保持一致：
- 366           *   五邑大学  220710班  3222004950  梁嘉惠
+ 364           * OLED_ShowBootScreen()  �ϵ翪�����棨��������Ϣ����ʾ2�룩
+C51 COMPILER V9.60.7.0   OLED                                                              02/25/2026 00:39:01 PAGE 7   
+
+ 365           * PCB˿ӡ��Ϣ��OLED�������汣��һ�£�
+ 366           *   ���ش�ѧ  220710��  3222004950  ���λ�
  367           *------------------------------------------------------------*/
  368          void OLED_ShowBootScreen(void)
  369          {
  370   1          OLED_Clear();
- 371   1          OLED_ShowStr(0, 0, "RainWiper V4.0");   /* 第1行：项目名 */
- 372   1          OLED_ShowStr(0, 2, "Wuyiu  Univ.  ");   /* 第2行：五邑大学（拼音）*/
- 373   1          OLED_ShowStr(0, 4, "220710 3222004950"); /* 第3行：班级+学号 */
- 374   1          OLED_ShowStr(0, 6, "Liang  JiaoHui");   /* 第4行：梁嘉惠（拼音） */
+ 371   1          OLED_ShowStr(0, 0, "RainWiper V4.0");   /* ��1�У���Ŀ�� */
+ 372   1          OLED_ShowStr(0, 2, "Wuyiu  Univ.  ");   /* ��2�У����ش�ѧ��ƴ����*/
+ 373   1          OLED_ShowStr(0, 4, "220710 3222004950"); /* ��3�У��༶+ѧ�� */
+ 374   1          OLED_ShowStr(0, 6, "Liang  JiaoHui");   /* ��4�У����λݣ�ƴ���� */
  375   1      }
 
-C51 COMPILATION COMPLETE.  2 WARNING(S),  16 ERROR(S)
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    649    ----
+   CONSTANT SIZE    =   1711    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      21
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

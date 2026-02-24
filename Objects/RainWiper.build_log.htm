@@ -19,46 +19,68 @@ CPU DLL:         S8051.DLL V3.125.1.0
 Dialog DLL:      DP51.DLL V2.69.0.0 
 <h2>Project:</h2>
 E:\21933\Documents\Keil C51\RainWiper\RainWiper.uvproj
-Project File Date:  02/24/2026
+Project File Date:  02/25/2026
 
 <h2>Output:</h2>
 Build target 'Target 1'
-assembling STARTUP.A51...
 compiling ADC0832.c...
-ADC0832.c(19): warning C318: can't open file 'ADC0832.h'
-ADC0832.c(41): error C202: 'ADC_CS': undefined identifier
-ADC0832.c(42): error C202: 'ADC_CLK': undefined identifier
-ADC0832.c(45): error C202: 'ADC_DI': undefined identifier
 compiling main.c...
-main.c(66): warning C318: can't open file 'ADC0832.h'
-main.c(67): warning C318: can't open file 'oled.h'
-main.c(476): warning C206: 'OLED_Init': missing function-prototype
-main.c(477): warning C206: 'OLED_ShowBootScreen': missing function-prototype
-main.c(479): warning C206: 'OLED_Clear': missing function-prototype
-main.c(492): warning C206: 'ADC0832_Filter': missing function-prototype
-main.c(517): warning C206: 'OLED_RefreshAll': missing function-prototype
-main.c(517): error C267: 'OLED_RefreshAll': requires ANSI-style prototype
 compiling oled.c...
-oled.c(19): warning C318: can't open file 'oled.h'
-oled.c(131): warning C206: '_nop_': missing function-prototype
-oled.c(131): error C264: intrinsic '_nop_': declaration/activation error
-oled.c(137): error C202: 'OLED_SDA': undefined identifier
-oled.c(138): error C202: 'OLED_SCL': undefined identifier
-oled.c(139): error C202: 'OLED_SDA': undefined identifier
-oled.c(140): error C202: 'OLED_SCL': undefined identifier
-oled.c(145): error C202: 'OLED_SDA': undefined identifier
-oled.c(146): error C202: 'OLED_SCL': undefined identifier
-oled.c(147): error C202: 'OLED_SDA': undefined identifier
-oled.c(155): error C202: 'OLED_SDA': undefined identifier
-oled.c(158): error C202: 'OLED_SCL': undefined identifier
-oled.c(159): error C202: 'OLED_SCL': undefined identifier
-oled.c(162): error C202: 'OLED_SDA': undefined identifier
-oled.c(164): error C202: 'OLED_SCL': undefined identifier
-oled.c(165): error C202: 'OLED_SCL': undefined identifier
-oled.c(174): error C202: 'OLED_ADDR': undefined identifier
-oled.c(186): error C202: 'OLED_ADDR': undefined identifier
+linking...
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  F8X16
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  OLED_SHOWBOOTSCREEN
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  ?_OLED_REFRESHALL?BYTE
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  _OLED_REFRESHALL
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  ?_OLED_SHOWNUM?BYTE
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  _OLED_SHOWNUM
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  _OLED_SHOWSTR
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  _OLED_SHOWCHAR
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  OLED_CLEAR
+    MODULE:  .\Objects\oled.obj (OLED)
+*** ERROR L104: MULTIPLE PUBLIC DEFINITIONS
+    SYMBOL:  OLED_INIT
+    MODULE:  .\Objects\oled.obj (OLED)
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?ADC0832_FILTER?ADC0832
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_INIT?MAIN
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_OLED_REFRESHALL?MAIN
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_SHOWBOOTSCREEN?MAIN
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_INIT?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_OLED_REFRESHALL?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_SHOWBOOTSCREEN?OLED
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  MAIN
+    MODULE:  D:\KEIL_V5\C51\LIB\C51S.LIB (?C_INIT)
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  MAIN
+    MODULE:  D:\KEIL_V5\C51\LIB\C51S.LIB (?C_INIT)
+    ADDRESS: 0EB8H
+Program Size: data=61.0 xdata=0 code=5118
 Target not created.
-Build Time Elapsed:  00:00:01
+Build Time Elapsed:  00:00:00
 </pre>
 </body>
 </html>
